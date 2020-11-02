@@ -35,7 +35,7 @@ String buildClass(String className, List<String> paths, StringBuffer bufferAll, 
         if (top) {
           buffer
             ..write(indent)
-            ..writeln('static const ${name.camelCase} = $className();');
+            ..writeln('static const $className ${name.camelCase} = $className();');
         } else {
           buffer
             ..write(indent)
