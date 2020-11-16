@@ -1,18 +1,22 @@
 import 'dart:io';
+import 'package:assets_gen/config_reader.dart';
 import 'package:path/path.dart';
 
 import 'string_x.dart';
 
 const indent = '  ';
 
-String buildCode(String className, List<String> paths) {
+String buildCode(String className, Config config) {
   final bufferAll = StringBuffer();
-  final main = buildClass(className, paths, bufferAll, true);
+  final main =
+      buildClass(className, config.paths, bufferAll, config.package, true);
   bufferAll.writeln(main);
   return bufferAll.toString();
 }
 
-String buildClass(String className, List<String> paths, StringBuffer bufferAll, [bool top = false]) {
+String buildClass(String className, List<String> paths, StringBuffer bufferAll,
+    String package,
+    [bool top = false]) {
   final buffer = StringBuffer('class $className {')
     ..writeln()
     ..write(indent);
@@ -35,20 +39,26 @@ String buildClass(String className, List<String> paths, StringBuffer bufferAll, 
         if (top) {
           buffer
             ..write(indent)
-            ..writeln('static const $className ${name.camelCase} = $className();');
+            ..writeln(
+                'static const $className ${name.camelCase} = $className();');
         } else {
           buffer
             ..write(indent)
             ..writeln('$className get ${name.camelCase} => $className();');
         }
 
-        final res = buildClass(className, directory.listSync().map((e) => e.path).toList(), bufferAll);
+        final res = buildClass(
+            className,
+            directory.listSync().map((e) => e.path).toList(),
+            bufferAll,
+            package);
         bufferAll.writeln(res);
         break;
       case FileSystemEntityType.file:
         buffer
           ..write(indent)
-          ..writeln("String get ${basenameWithoutExtension(p).camelCase} => '$p';");
+          ..writeln(
+              "String get ${basenameWithoutExtension(p).camelCase} => '${package == null ? '' : 'package/$package/'}$p';");
         break;
     }
   }

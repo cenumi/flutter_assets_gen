@@ -6,6 +6,7 @@ class Config {
   String outPath = 'gen/';
   String fileName = 'assets.dart';
   String className = 'Assets';
+  String package;
   List<String> paths = [];
 
   @override
@@ -29,9 +30,14 @@ Config readConfig(String filePath) {
   if (config == null) {
     return res;
   }
+  final package = config['package'];
   final outPath = config['out_path'];
   final fileName = config['file_name'];
   final className = config['class_name'];
+
+  if (package != null) {
+    res.package = package;
+  }
 
   if (outPath != null) {
     res.outPath = outPath;
