@@ -58,7 +58,7 @@ String buildClass(String className, List<String> paths, StringBuffer bufferAll,
         buffer
           ..write(indent)
           ..writeln(
-              "String get ${basenameWithoutExtension(p).camelCase} => '${package == null ? '' : 'package/$package/'}$p';");
+              "String get ${basenameWithoutExtension(p).camelCase} => '${package == null ? '' : 'packages/$package/'}$p';");
         break;
     }
   }
