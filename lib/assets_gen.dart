@@ -5,7 +5,7 @@ import 'package:assets_gen/file_builder.dart';
 void start() {
   final config = readConfig('pubspec.yaml');
 
-  final content = buildCode(config.className, config);
+  final content = buildCode(config.className, config.package, config.paths, config.lineWidth);
 
   buildFile(config.outPath + config.fileName, content);
 }

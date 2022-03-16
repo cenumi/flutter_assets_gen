@@ -1,68 +1,55 @@
 import 'dart:io';
-import 'package:assets_gen/config_reader.dart';
+import 'package:code_builder/code_builder.dart';
+import 'package:dart_style/dart_style.dart';
 import 'package:path/path.dart';
 
 import 'string_x.dart';
 
-const indent = '  ';
+String buildCode(String className, String packageName, List<String> paths, int lineWidth) {
+  final cls = Class((c) {
+    c.docs.addAll([
+      '// ignore_for_file: constant_identifier_names\n',
+      '// GENERATED CODE - DO NOT MODIFY BY HAND\n\n',
+    ]);
+    c.name = className;
+    c.constructors.add(Constructor((constructor) {
+      constructor.constant = true;
+      constructor.name = '_';
+    }));
+    for (final path in paths.where((element) => !element.contains('DS_Store'))) {
+      c.fields.addAll(buildLines(path, packageName));
+    }
+  });
 
-String buildCode(String className, Config config) {
-  final bufferAll = StringBuffer();
-  final main =
-      buildClass(className, config.paths, bufferAll, config.package, true);
-  bufferAll.writeln(main);
-  return bufferAll.toString();
+  final emitter = DartEmitter(useNullSafetySyntax: true, orderDirectives: true);
+
+  return DartFormatter(pageWidth: lineWidth).format('${cls.accept(emitter)}');
 }
 
-String buildClass(String className, List<String> paths, StringBuffer bufferAll,
-    String package,
-    [bool top = false]) {
-  final buffer = StringBuffer('class $className {')
-    ..writeln()
-    ..write(indent);
+List<Field> buildLines(String path, String package) {
+  final type = FileSystemEntity.typeSync(path);
+  print('building: $type: $path');
+  final lines = <Field>[];
 
-  if (top) {
-    buffer..writeln('$className._();')..writeln();
-  } else {
-    buffer..writeln('const $className();')..writeln();
+  switch (type) {
+    case FileSystemEntityType.directory:
+      final dir = Directory(path);
+      for (final innerPath in dir.listSync().map((e) => e.path)) {
+        lines.addAll(buildLines(innerPath, package));
+      }
+
+      break;
+    case FileSystemEntityType.file:
+      lines.add(Field((field) {
+        field.docs.add('/// $path');
+        field.static = true;
+        field.modifier = FieldModifier.constant;
+        field.name = relative(withoutExtension(path), from: split(path).first).snakeCase;
+        field.type = refer('String');
+        field.assignment = Code('"packages/$package/$path"');
+      }));
+      break;
   }
 
-  for (final p in paths) {
-    final type = FileSystemEntity.typeSync(p);
-
-    switch (type) {
-      case FileSystemEntityType.directory:
-        final directory = Directory(p);
-        final name = split(directory.path).last;
-        final className = '_Assets${name.pascalCase}';
-
-        if (top) {
-          buffer
-            ..write(indent)
-            ..writeln(
-                'static const $className ${name.camelCase} = $className();');
-        } else {
-          buffer
-            ..write(indent)
-            ..writeln('$className get ${name.camelCase} => $className();');
-        }
-
-        final res = buildClass(
-            className,
-            directory.listSync().map((e) => e.path).toList(),
-            bufferAll,
-            package);
-        bufferAll.writeln(res);
-        break;
-      case FileSystemEntityType.file:
-        buffer
-          ..write(indent)
-          ..writeln(
-              "String get ${basenameWithoutExtension(p).camelCase} => '${package == null ? '' : 'packages/$package/'}$p';");
-        break;
-    }
-  }
-
-  buffer.writeln('}');
-  return buffer.toString();
+  return lines;
 }
