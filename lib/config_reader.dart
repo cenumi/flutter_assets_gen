@@ -7,7 +7,7 @@ class Config {
   String fileName = 'assets.dart';
   String className = 'Assets';
   int lineWidth = 80;
-  late String package;
+  String? package;
   List<String> paths = [];
 
   @override
@@ -28,10 +28,12 @@ Config readConfig(String filePath) {
   }
 
   final config = yaml['assets_gen'];
+
   if (config == null) {
     return res;
   }
-  final package = config['package'] ?? yaml['name'];
+
+  final package = config['package'];
   final outPath = config['out_path'];
   final fileName = config['file_name'];
   final className = config['class_name'];

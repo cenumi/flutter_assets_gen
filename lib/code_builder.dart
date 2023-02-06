@@ -5,7 +5,7 @@ import 'package:path/path.dart';
 
 import 'string_x.dart';
 
-String buildCode(String className, String packageName, List<String> paths, int lineWidth) {
+String buildCode(String className, String? packageName, List<String> paths, int lineWidth) {
   final cls = Class((c) {
     c.docs.addAll([
       '// ignore_for_file: constant_identifier_names\n',
@@ -26,7 +26,7 @@ String buildCode(String className, String packageName, List<String> paths, int l
   return DartFormatter(pageWidth: lineWidth).format('${cls.accept(emitter)}');
 }
 
-List<Field> buildLines(String path, String package) {
+List<Field> buildLines(String path, String? package) {
   final type = FileSystemEntity.typeSync(path);
   print('building: $type: $path');
   final lines = <Field>[];
@@ -46,8 +46,14 @@ List<Field> buildLines(String path, String package) {
         field.modifier = FieldModifier.constant;
         field.name = relative(withoutExtension(path), from: split(path).first).snakeCase;
         field.type = refer('String');
-        field.assignment = Code('"packages/$package/$path"');
+        if (package == null) {
+          field.assignment = Code('"$path"');
+        } else {
+          field.assignment = Code('"packages/$package/$path"');
+        }
       }));
+      break;
+    default:
       break;
   }
 
