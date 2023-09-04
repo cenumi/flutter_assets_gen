@@ -16,7 +16,8 @@ String buildCode(String className, String? packageName, List<String> paths, int 
       constructor.constant = true;
       constructor.name = '_';
     }));
-    for (final path in paths.where((element) => !element.contains('DS_Store'))) {
+
+    for (final path in paths) {
       c.fields.addAll(buildLines(path, packageName));
     }
   });
@@ -28,11 +29,12 @@ String buildCode(String className, String? packageName, List<String> paths, int 
 
 List<Field> buildLines(String path, String? package) {
   final type = FileSystemEntity.typeSync(path);
-  print('building: $type: $path');
+
   final lines = <Field>[];
 
   switch (type) {
     case FileSystemEntityType.directory:
+      print('building: $type: $path');
       final dir = Directory(path);
       for (final innerPath in dir.listSync().map((e) => e.path)) {
         lines.addAll(buildLines(innerPath, package));
@@ -40,6 +42,8 @@ List<Field> buildLines(String path, String? package) {
 
       break;
     case FileSystemEntityType.file:
+      if (path.contains('.DS_Store')) break;
+      print('building: $type: $path');
       lines.add(Field((field) {
         field.docs.add('/// $path');
         field.static = true;
